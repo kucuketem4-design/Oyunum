@@ -1,0 +1,193 @@
+<!DOCTYPE html><html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kawaii Clicker</title>
+  <style>
+    body {
+      margin: 0;
+      background: #ffeafc;
+      font-family: "Comic Sans MS", sans-serif;
+      overflow: hidden;
+    }
+    #gameCanvas {
+      background: linear-gradient(#ffd6f5, #ffffff);
+      display: block;
+      margin: 0 auto;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #ff62b0;
+      font-size: 22px;
+      font-weight: bold;
+      text-shadow: 1px 1px white;
+    }
+    #menu, #settings, #shop, #characterSelect {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 220, 250, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: #ff4fa5;
+      display: none;
+    }
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      border-radius: 20px;
+      border: none;
+      font-size: 20px;
+      background: #ff9ad8;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body><div id="ui">Puan: <span id="score">0</span></div>
+<canvas id="gameCanvas" width="900" height="600"></canvas><!-- MENÜLER --><div id="menu">
+  <h1>🌸 KAWAII CLICKER 🌸</h1>
+  <button onclick="startGame()">Başla</button>
+  <button onclick="openCharacterSelect()">Kawaii Karakterler</button>
+  <button onclick="openShop()">Puan Mağazası</button>
+  <button onclick="openSettings()">Ayarlar</button>
+</div><div id="settings">
+  <h2>Ayarlar ⚙️</h2>
+  <label>Dil:
+    <select id="langSelect">
+      <option>Türkçe</option>
+      <option>English</option>
+      <option>Русский</option>
+      <option>Français</option>
+      <option>Deutsch</option>
+    </select>
+  </label><label>Ses Seviyesi: <input id="volume" type="range" min="0" max="1" step="0.1" value="0.5" /> </label>
+
+<button onclick="closeSettings()">Geri</button>
+
+</div><div id="shop">
+  <h2>Puan Mağazası 🛒</h2>
+  <p>Skin Açma • Efektler • Özel Patlama</p>
+  <button onclick="closeShop()">Geri</button>
+</div><div id="characterSelect">
+  <h2>Kawaii Karakter Seç 💖</h2>
+  <button onclick="closeCharacterSelect()">Geri</button>
+</div><script>
+//------------- OYUN DEĞİŞKENLERİ ------------------
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const scoreText = document.getElementById("score");
+let score = 0;
+let kawaiiImg = new Image();
+kawaiiImg.src = "https://i.imgur.com/kaPeK2j.png"; // örnek kawaii PNG
+
+let items = [];
+
+//------------- SESLER ------------------
+const popSound = new Audio("https://www.myinstants.com/media/sounds/pop.mp3");
+const bgMusic = new Audio("https://files.catbox.moe/3ou7pi.mp3");
+bgMusic.loop = true;
+
+//------------- IŞIK HALKASI PATLAMA ------------------
+class Explosion {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = 0;
+    this.opacity = 1;
+  }
+  update() {
+    this.radius += 4;
+    this.opacity -= 0.03;
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255, 120, 200, ${this.opacity})`;
+    ctx.lineWidth = 6;
+    ctx.stroke();
+  }
+}
+let explosions = [];
+
+//------------- OYUN DÖNGÜSÜ ------------------
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  items.forEach((item) => {
+    ctx.drawImage(kawaiiImg, item.x, item.y, 90, 90);
+  });
+
+  explosions.forEach((ex, i) => {
+    ex.update();
+    ex.draw();
+    if (ex.opacity <= 0) explosions.splice(i, 1);
+  });
+
+  requestAnimationFrame(gameLoop);
+}
+
+//------------- ITEM EKLE ------------------
+function spawnItem() {
+  const x = Math.random() * (canvas.width - 100);
+  const y = Math.random() * (canvas.height - 100);
+  items.push({ x, y });
+}
+
+canvas.addEventListener("click", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  items.forEach((item, i) => {
+    if (x > item.x && x < item.x + 90 && y > item.y && y < item.y + 90) {
+      items.splice(i, 1);
+      score++;
+      scoreText.innerText = score;
+      popSound.volume = document.getElementById("volume").value;
+      popSound.play();
+      explosions.push(new Explosion(x, y));
+      spawnItem();
+    }
+  });
+});
+
+//------------- MENÜ FONKSİYONLARI ------------------
+document.getElementById("menu").style.display = "flex";
+
+function startGame() {
+  document.getElementById("menu").style.display = "none";
+  bgMusic.volume = 0.3;
+  bgMusic.play();
+  spawnItem();
+}
+function openSettings() {
+  settings.style.display = "flex";
+}
+function closeSettings() {
+  settings.style.display = "none";
+}
+function openShop() {
+  shop.style.display = "flex";
+}
+function closeShop() {
+  shop.style.display = "none";
+}
+function openCharacterSelect() {
+  characterSelect.style.display = "flex";
+}
+function closeCharacterSelect() {
+  characterSelect.style.display = "none";
+}
+
+// Başlat
+requestAnimationFrame(gameLoop);
+</script></body>
+</html>
